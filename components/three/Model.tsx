@@ -18,7 +18,6 @@ const Model = () => {
   useEffect(() => {
     const callApi = async () => {
       const data = await getGuildData();
-      console.log(data);
       const items = [];
       const totalCards = data.length;
 
