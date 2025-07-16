@@ -14,14 +14,15 @@ const Model = () => {
   const [cards, setCards] = useState<{ key: string; object: THREE.Object3D }[]>(
     []
   );
+  const [selectedCard, setSelectedCard] = useState<THREE.Object3D | null>(null);
 
   useEffect(() => {
     const callApi = async () => {
       const data = await getGuildData();
       const items = [];
-      const totalCards = data.length;
+      const totalCards = data.length - 1;
 
-      for (let i = 0; i < totalCards; i++) {
+      for (let i = 1; i <= totalCards; i++) {
         const texture = new THREE.TextureLoader().load(
           data[i].character_image,
           (texture) => {
@@ -51,6 +52,31 @@ const Model = () => {
           object: cardClone,
         });
       }
+      const texture = new THREE.TextureLoader().load(
+        data[0].character_image,
+        (texture) => {
+          texture.wrapS = THREE.RepeatWrapping;
+          texture.wrapT = THREE.RepeatWrapping;
+          texture.repeat.set(1, 1);
+          texture.flipY = false; // 보통 GLTF에는 false가 필요
+          texture.colorSpace = THREE.SRGBColorSpace;
+        }
+      );
+      const childrenGroup = originalCard.children[0];
+      const mesh = childrenGroup.children[1] as THREE.Mesh;
+      mesh.material = (mesh.material as THREE.Material).clone();
+      (mesh.material as THREE.MeshStandardMaterial).map = texture;
+      (mesh.material as THREE.MeshStandardMaterial).emissiveMap = texture;
+      mesh.material.needsUpdate = true;
+
+      const cardClone = originalCard.clone(true);
+      const originPosition = cardClone.children[0].position.clone();
+      cardClone.children[0].position.set(0, originPosition.y + 0.5, 0);
+      cardClone.children[1].position.set(0, originPosition.y + 0.5, 0);
+      cardClone.children[0].rotateY(-Math.PI);
+      cardClone.children[1].rotateY(-Math.PI);
+
+      setSelectedCard(cardClone);
       setCards(items);
     };
 
@@ -92,7 +118,7 @@ const Model = () => {
           <primitive key={card.key} object={card.object} onClick={() => {}} />
         ))}
       </group>
-
+      {selectedCard && <primitive object={selectedCard} />}
       <primitive object={deco} scale={1.2} />
 
       <primitive object={sky} />
